@@ -1,0 +1,12 @@
+.option-panel {
+  box-sizing: border-box;
+  padding: 10px;
+  width: 150px;
+}
+
+.select-box {
+  display: flex;
+  align-items:center; 
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
