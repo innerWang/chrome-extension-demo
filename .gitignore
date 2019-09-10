@@ -3,3 +3,13 @@ node_modules
 background/node_modules
 background/yarn.lock
 
+# idea setting
+.idea
+# vscode setting
+.vscode
+
+.DS_Store
+
+
+
+
