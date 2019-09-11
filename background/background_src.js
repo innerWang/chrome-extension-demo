@@ -5,33 +5,71 @@
 **/
 
 const translateUrl = 'https://fanyi-api.baidu.com/api/trans/vip/translate'
+const menuJumpUrl = 'https://fanyi.baidu.com'
 const APP_ID='20190909000333072'
 const APP_KEY='y1loGIAsxE7YyelbZV6_'
 const MD5 = require('./md5.js')
 
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.queryType === 'translate') {
-      const q= request.q
-      const from = request.from
-      const to=request.to
-      const appid = APP_ID
-      const appkey = APP_KEY
-      const salt = Math.ceil(Math.random()*10000000000)+''
-      const sign= MD5(appid+q+salt+appkey)
+chrome.runtime.onInstalled.addListener(function() {
+  let from = 'en'
+  let to = 'zh'
 
-      const url = `${translateUrl}?q=${q}&from=${from}&to=${to}&appid=${appid}&salt=${salt}&sign=${sign}`
-      fetch(url, { headers: {'content-type': 'application/json'} })
-        .then(res => res.json())
-        .then(data => sendResponse(data))
-        .catch(e => {
-          console.log(e.error_msg || e)
-          sendResponse('')
-        })
-      return true;  // Will respond asynchronously.
+  chrome.storage.sync.get(['src-lang','dest-lang'], function(result) {
+    if(result['src-lang']){
+      from = result['src-lang'].value
     }
-  }
-);
+  
+    if(result['dest-lang']){
+      to = result['dest-lang'].value
+    }
+  })
+
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+      if (request.queryType === 'translate') {
+        const q= request.q
+        from = request.from
+        to=request.to
+        const appid = APP_ID
+        const appkey = APP_KEY
+        const salt = Math.ceil(Math.random()*10000000000)+''
+        const sign= MD5(appid+q+salt+appkey)
+  
+        const url = `${translateUrl}?q=${q}&from=${from}&to=${to}&appid=${appid}&salt=${salt}&sign=${sign}`
+        fetch(url, { headers: {'content-type': 'application/json'} })
+          .then(res => res.json())
+          .then(data => sendResponse(data))
+          .catch(e => {
+            console.log(e.error_msg || e)
+            sendResponse('')
+          })
+        return true  // Will respond asynchronously.
+      }
+    }   
+  )
+
+  chrome.contextMenus.create({
+    "id": "trans",
+    "title": "翻译",
+    "contexts": ["selection"]   // 对应 contextType的取值，只有符合取值条件时才会显示menu
+  })
+
+  chrome.contextMenus.onClicked.addListener(function(info){
+    if(info.menuItemId === 'trans'){
+      chrome.tabs.create({url: `${menuJumpUrl}/#${from}/${to}/${info.selectionText}`})
+    }
+  })
+
+  chrome.storage.onChanged.addListener(function(changes){
+    if(changes['src-lang']){
+      from = changes['src-lang'].newValue.value
+    }else if(changes['dest-lang']){
+      to = changes['dest-lang'].newValue.value
+    }
+  })
+
+})
+
+
 
 
 

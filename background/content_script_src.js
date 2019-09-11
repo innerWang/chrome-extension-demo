@@ -1,8 +1,8 @@
 class Panel {
   constructor(){
     this.mode = 'off'
-    this.srcLang = 'en'
-    this.destLang = 'zh'
+    this.srcLang = {value: 'en', key: 'English'}
+    this.destLang = {value: 'zh', key: '中文'}
     this.createPanel()
     this.bind()
   }
@@ -48,7 +48,7 @@ class Panel {
   translate(data,x,y){
     const q= data.toString()
     chrome.runtime.sendMessage(
-      { queryType: 'translate', q:q, form: this.srcLang, to:this.destLang }, 
+      { queryType: 'translate', q:q, form: this.srcLang.value, to:this.destLang.value }, 
       res => {
         if(res){
           this.src.innerText=q
@@ -78,11 +78,19 @@ document.onmouseup= function(e){
   trans_panel.translate(str,e.clientX,e.clientY)
 }
 
-chrome.storage.sync.get(['trans-mode'], function(result) {
+chrome.storage.sync.get(['trans-mode','src-lang','dest-lang'], function(result) {
   if(result['trans-mode']){
     trans_panel.mode= result['trans-mode']
   }
-});
+
+  if(result['src-lang']){
+    trans_panel.srcLang= result['src-lang']
+  }
+
+  if(result['dest-lang']){
+    trans_panel.destLang = result['dest-lang']
+  }
+})
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
@@ -91,3 +99,11 @@ chrome.runtime.onMessage.addListener(
       sendResponse('already renew trans-mode!');
     } 
   });
+
+chrome.storage.onChanged.addListener(function(changes){
+  if(changes['src-lang']){
+    trans_panel.srcLang = changes['src-lang'].newValue
+  }else if(changes['dest-lang']){
+    trans_panel.destLang = changes['dest-lang'].newValue
+  }
+})
